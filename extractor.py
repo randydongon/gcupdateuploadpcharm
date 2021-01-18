@@ -8,12 +8,12 @@ import re
 
 def allgchistory(sk, gcid):
     filename = getfilename()
-    workbook = getworkbook(filename)  # workbook
-
-    gcmessages = input("Press 1 for recent GC:\nPress 3 for Start to Present GC History: ")
+    workbook = getworkbook(filename)  # workbook  
 
     ln = len(gcid)
     history = True
+
+    recentprevious = input("\nPress 1 recent messages only\nPress 3 from start to precent messages: ")
 
     for x in gcid:
         if ln <= 0:
@@ -31,11 +31,14 @@ def allgchistory(sk, gcid):
             msg(sheetname)
             worksheet = workbook.add_worksheet(sheetname)
 
-            getMsgs(ch, sk, worksheet, history, gcmessages)
+            if recentprevious == '1':
+                getrecentmsgs(ch, sk, worksheet, history)
+            elif recentprevious == '3':
+                getMsgs(ch, sk, worksheet, history)
 
     workbook.close()
     print(f'{filename} GC History successfully retrieved!')
-    # uploadfile('./docs/', filename+'.xlsx')
+    # uploadfile('./docs/', filename+'.xlsx')   
 
 
 def removeHtmlTag(raw_txt):
@@ -45,29 +48,28 @@ def removeHtmlTag(raw_txt):
 
 
 def singlegchistory(sk, gcid, id):
+
     filename = getfilename()
     workbook = getworkbook(filename)  # generate workbook
+
     ch = sk.chats.chat(id)
     history = True
-    if gcid[id].topic:
-        gcmessages = input("Press 1 for recent GC:\nPress 3 for Start to Present GC History: ")
 
-        sheetname = cleanstring(gcid[id.strip()].topic)
+    recentprevious = input("\nPress 1 recent messages only\nPress 3 from start to precent messages: ")
 
-        worksheet = workbook.add_worksheet(sheetname)
+    sheetname = cleanstring(gcid[id.strip()].topic)
 
-        msg(sheetname)
+    worksheet = workbook.add_worksheet(sheetname)
 
-        getMsgs(ch, sk, worksheet, history, gcmessages)
+    msg(sheetname)
 
-        workbook.close()
-        print(f'{filename} GC History successfully retrieved!')
+    if recentprevious == '1':
+        getrecentmsgs(ch, sk, worksheet, history)
+    elif recentprevious == '3':
+        getMsgs(ch, sk, worksheet, history)
 
-        spinner().stop()
-    else:
-        print("There was an error on GC ID.")
-
-    spinner().stop()
+    workbook.close()
+    print(f'{filename} GC History successfully retrieved!')    
 
 
 def getworkbook(filename):
@@ -77,51 +79,48 @@ def getworkbook(filename):
     return workbook
 
 
-def getMsgs(ch, sk, worksheet, history, gcmessages):
+def getMsgs(ch, sk, worksheet, history):
+    from animatecursor import CursorAnimation
+    spin = CursorAnimation()
+
     col = 0
     row = 0
     outer = False
-    msglist = []
+    msglist = []    
+    spin.start()
 
-    if gcmessages == '1':
+    while history:
 
-        msglist = getrecentmsgs(ch.getMsgs(), sk)
+        gcmsgs = ch.getMsgs()
 
-    elif gcmessages == 3:
-        spinner().start()
+        for ms in gcmsgs:
 
-        while history:
+            if re.findall('HistoryDisclosedUpdate', ms.type):  #
+                print(ms.type)
+                print(ms.history)
+                history = False
+                outer = ms.history
 
-            gcmsgs = ch.getMsgs()
-
-            for ms in gcmsgs:
-
-                if re.findall('HistoryDisclosedUpdate', ms.type):  #
-                    print(ms.type)
-                    print(ms.history)
-                    history = False
-                    outer = ms.history
-
-                    break
-
-                else:
-                    if sk.contacts[ms.userId]:
-                        msglist.append(ms)
-
-            if outer:
-                spinner().stop()
                 break
+
+            else:
+                if sk.contacts[ms.userId]:
+                    msglist.append(ms)
+
+        if outer:
+            spin.stop()            
+            break
 
     msglist.reverse()
     for ms in msglist:
         worksheet.write(row, col, str(ms.time))
         worksheet.write(row, col + 1, sk.contacts[ms.userId].name.first)
         worksheet.write(row, col + 2, removeHtmlTag(ms.content))
-        row += 1
+        row += 1   
 
-    if not history:
-        spinner().stop()
-
+    
+    spin.stop()
+    
 
 def msg(cleanString):
     print(f"Extracting: {cleanString} Chat History...")
@@ -145,20 +144,31 @@ def getallrecentmsgs():
     print("all recent gc msgs")
 
 
-def getrecentmsgs(gcmsgs, sk):
-    msglist = []
-
-    for ms in gcmsgs:
-
-        if sk.contacts[ms.userId]:
-            msglist.append(ms)
-
-    spinner().stop()
-
-    return msglist
-
-
-def spinner():
+def getrecentmsgs(ch, sk, worksheet, history):
     from animatecursor import CursorAnimation
     spin = CursorAnimation()
-    return spin
+
+    col = 0
+    row = 0
+    outer = False
+    msglist = []
+
+    spin.start()
+
+    gcmsgs = ch.getMsgs()
+
+    for ms in gcmsgs:
+       
+        if sk.contacts[ms.userId]:
+            msglist.append(ms)        
+    
+    msglist.reverse()
+    for ms in msglist:
+        worksheet.write(row, col, str(ms.time))
+        worksheet.write(row, col + 1, sk.contacts[ms.userId].name.first)
+        worksheet.write(row, col + 2, removeHtmlTag(ms.content))
+        row += 1
+    history = False
+
+    spin.stop()
+        

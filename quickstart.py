@@ -24,14 +24,14 @@ from apiclient.discovery  import build
 # import glob
 # import itertools
 # import shutil
-# import openpyxl
-# from openpyxl import load_workbook
-# from openpyxl.utils.dataframe import dataframe_to_rows
-# from openpyxl.chart import (
-#     LineChart,
-#     Reference,
-#     Series
-# )
+import openpyxl
+from openpyxl import load_workbook
+from openpyxl.utils.dataframe import dataframe_to_rows
+from openpyxl.chart import (
+    LineChart,
+    Reference,
+    Series
+)
 #
 # import random
 # import time

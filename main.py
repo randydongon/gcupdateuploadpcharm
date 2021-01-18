@@ -26,7 +26,7 @@ def main():
             if not login:
                 print('\nEnter password to login:\n')
                 try:
-                    sk = Skype(input("Enter username: "), getpass())
+                    sk = Skype('katranjikamote@gmail.com', 'LoBo2020')
                     login = True
                     if sk.conn.connected:
                         gcid = sk.chats.recent()
